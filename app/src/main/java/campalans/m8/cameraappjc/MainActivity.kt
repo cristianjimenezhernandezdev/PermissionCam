@@ -171,3 +171,31 @@ fun CameraScreen() {
         }
     }
 }
+
+/*S’han fet dos canvis principals al projecte perquè l’aplicació pugui funcionar correctament:
+la gestió dels permisos de càmera i la reproducció del vídeo capturat.
+
+Primer s’ha implementat la gestió del permís de càmera. Android considera l’accés a la
+càmera un permís “dangerous”, per tant no n’hi ha prou amb declarar-lo al AndroidManifest.xml,
+sinó que també s’ha de demanar en temps d’execució. Per fer-ho s’utilitza
+rememberLauncherForActivityResult amb ActivityResultContracts.RequestPermission().
+Quan l’usuari prem el botó “Demanar permís de càmera”, es llança la sol·licitud del permís.
+Si l’usuari l’accepta, la variable d’estat cameraPermissionGranted passa a ser true i l’aplicació
+mostra la pantalla CameraScreen(). Si el permís no està concedit, es mostra un missatge i el
+botó per tornar-lo a demanar.
+
+El segon canvi és la captura i reproducció del vídeo. Per gravar el vídeo s’utilitza
+ActivityResultContracts.CaptureVideo(), que obre l’aplicació de càmera del dispositiu.
+Abans d’obrir-la es crea un fitxer .mp4 amb la funció createImageFile(), que genera un
+nom i obté una Uri segura mitjançant FileProvider. Aquesta Uri és la ubicació on es guardarà
+el vídeo gravat.
+
+Un cop el vídeo s’ha capturat correctament, s’utilitza Media3 (ExoPlayer) per reproduir-lo
+dins de la interfície de l’aplicació. Es crea un reproductor amb ExoPlayer.Builder(context),
+es carrega el vídeo amb MediaItem.fromUri(uri), es prepara amb prepare() i es configura perquè
+comenci a reproduir-se automàticament. Per mostrar el reproductor dins de Jetpack Compose
+s’utilitza AndroidView, que permet inserir el component clàssic PlayerView dins de la UI de Compose.
+
+Finalment s’ha afegit DisposableEffect per alliberar el reproductor quan el composable
+desapareix. Això crida player.release() i evita que el reproductor quedi ocupant memòria o
+recursos del sistema després de deixar de mostrar el vídeo.*/
