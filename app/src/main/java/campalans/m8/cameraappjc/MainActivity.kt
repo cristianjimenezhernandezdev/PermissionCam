@@ -17,17 +17,47 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import coil3.compose.AsyncImage
 import java.io.File
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+
+            var cameraPermissionGranted by remember { mutableStateOf(false) }
+            val permissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { granted ->
+                cameraPermissionGranted = granted
+
+            }
+
             MaterialTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    CameraScreen()
+                    if (cameraPermissionGranted) {
+                        CameraScreen()
+                    } else {
+                        Column (
+                            verticalArrangement=Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxSize()
+
+
+                        ) {
+                            Text(if (cameraPermissionGranted) "Permission Granted" else "Permission Denied")
+                            Button(onClick = {
+                                permissionLauncher.launch(android.Manifest.permission.CAMERA)
+                            }) {
+                                Text("Demanar permís de càmera")
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -93,11 +123,27 @@ fun CameraScreen() {
                     .weight(1f),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
-                AsyncImage(
-                    model = uri,
-                    contentDescription = "Foto capturada",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                val player = remember {
+                    ExoPlayer.Builder(context).build().apply {
+                        setMediaItem(MediaItem.fromUri(uri))
+                        prepare()
+                        playWhenReady = true
+                    }
+                }
+
+                DisposableEffect(player) {
+                    onDispose {
+                        player.release()
+                    }
+                }
+
+                AndroidView(
+                    factory = {
+                        PlayerView(it).apply {
+                            this.player = player
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         } ?: run {
@@ -109,11 +155,17 @@ fun CameraScreen() {
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
-                Box(
+                Column(
                     modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("La imatge apareixerà aquí")
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("La imatge apareixerà aquí")
+                    }
                 }
             }
         }
